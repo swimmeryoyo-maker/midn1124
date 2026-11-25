@@ -71,13 +71,16 @@ import Layout from '../layouts/Layout.astro';
     <!-- 2. 主導覽切換按鈕 -->
     <div class="main-nav-row">
       <button id="btn-nav-projects" class="main-nav-btn active">
-        📋 專案 / 企劃 / 比賽 / 商演 / 活動表演
+        <span class="nav-label-desktop">📋 專案 / 企劃 / 比賽 / 商演 / 活動表演</span>
+        <span class="nav-label-mobile">📋 專案企劃</span>
       </button>
       <button id="btn-nav-manpower" class="main-nav-btn inactive">
-        👥 當週人力與調查表
+        <span class="nav-label-desktop">👥 當週人力與調查表</span>
+        <span class="nav-label-mobile">👥 人力調查</span>
       </button>
       <button id="btn-nav-account" class="main-nav-btn inactive">
-        ⚙️ 帳號與成員管理
+        <span class="nav-label-desktop">⚙️ 帳號與成員管理</span>
+        <span class="nav-label-mobile">⚙️ 帳號管理</span>
       </button>
     </div>
 
