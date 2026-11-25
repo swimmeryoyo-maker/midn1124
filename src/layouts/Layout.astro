@@ -12,14 +12,79 @@ const { title = 'StageSync 團隊企劃與人力調遣系統' } = Astro.props;
 <html lang="zh-Hant">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
     <meta name="google" content="notranslate" />
+    <meta name="theme-color" content="#0e1015" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="StageSync" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
     <title>{title}</title>
   </head>
   <body>
+    <div id="offline-banner" class="offline-banner hidden">
+      ⚠️ 目前處於離線狀態，連線恢復後將自動同步
+    </div>
+    <div id="install-banner" class="install-banner hidden">
+      <span>📲 可將 StageSync 安裝至桌面／主畫面</span>
+      <div class="row" style="gap: 8px;">
+        <button id="btn-pwa-install" class="btn-sm btn-primary">安裝 App</button>
+        <button id="btn-pwa-dismiss" class="btn-sm">稍後</button>
+      </div>
+    </div>
     <div id="toast-container"></div>
     <main class="app-container">
       <slot />
     </main>
+
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
+        });
+      }
+
+      const offlineBanner = document.getElementById('offline-banner');
+      function syncOnlineStatus() {
+        if (!offlineBanner) return;
+        offlineBanner.classList.toggle('hidden', navigator.onLine);
+      }
+      window.addEventListener('online', syncOnlineStatus);
+      window.addEventListener('offline', syncOnlineStatus);
+      syncOnlineStatus();
+
+      let deferredPrompt: any = null;
+      const installBanner = document.getElementById('install-banner');
+      const btnInstall = document.getElementById('btn-pwa-install');
+      const btnDismiss = document.getElementById('btn-pwa-dismiss');
+
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        installBanner?.classList.remove('hidden');
+      });
+
+      btnInstall?.addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        installBanner?.classList.add('hidden');
+      });
+
+      btnDismiss?.addEventListener('click', () => {
+        installBanner?.classList.add('hidden');
+      });
+
+      window.addEventListener('appinstalled', () => {
+        deferredPrompt = null;
+        installBanner?.classList.add('hidden');
+      });
+    </script>
   </body>
 </html>
