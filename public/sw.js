@@ -1,5 +1,5 @@
-const CACHE_NAME = 'stagesync-pwa-v2';
-const APP_SHELL = ['/manifest.webmanifest', '/icons/icon.svg'];
+const CACHE_NAME = 'stagesync-pwa-v3';
+const APP_SHELL = ['/manifest.webmanifest', '/icons/icon-192.png'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

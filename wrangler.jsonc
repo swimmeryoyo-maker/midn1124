@@ -16,7 +16,7 @@
     }
   ],
   "vars": {
-    "APP_NAME": "StageSync 團隊企劃與人力調遣系統"
+    "APP_NAME": "midnight"
   },
   "observability": {
     "enabled": true

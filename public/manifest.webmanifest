@@ -1,6 +1,6 @@
 {
-  "name": "StageSync 團隊企劃與人力調遣系統",
-  "short_name": "StageSync",
+  "name": "midnight",
+  "short_name": "midnight",
   "description": "團隊專案企劃管理與當週／下週人力調查系統",
   "start_url": "/",
   "scope": "/",
@@ -10,12 +10,6 @@
   "theme_color": "#bb86fc",
   "lang": "zh-Hant",
   "icons": [
-    {
-      "src": "/icons/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    },
     {
       "src": "/icons/icon-192.png",
       "sizes": "192x192",

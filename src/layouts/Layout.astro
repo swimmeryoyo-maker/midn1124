@@ -5,7 +5,7 @@ interface Props {
   title?: string;
 }
 
-const { title = 'StageSync 團隊企劃與人力調遣系統' } = Astro.props;
+const { title = 'midnight' } = Astro.props;
 ---
 
 <!doctype html>
@@ -20,9 +20,9 @@ const { title = 'StageSync 團隊企劃與人力調遣系統' } = Astro.props;
     <meta name="theme-color" content="#0e1015" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="StageSync" />
+    <meta name="apple-mobile-web-app-title" content="midnight" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
     <title>{title}</title>
   </head>
@@ -31,7 +31,7 @@ const { title = 'StageSync 團隊企劃與人力調遣系統' } = Astro.props;
       ⚠️ 目前處於離線狀態，連線恢復後將自動同步
     </div>
     <div id="install-banner" class="install-banner hidden">
-      <span>📲 可將 StageSync 安裝至桌面／主畫面</span>
+      <span>📲 可將 midnight 安裝至桌面／主畫面</span>
       <div class="row" style="gap: 8px;">
         <button id="btn-pwa-install" class="btn-sm btn-primary">安裝 App</button>
         <button id="btn-pwa-dismiss" class="btn-sm">稍後</button>
