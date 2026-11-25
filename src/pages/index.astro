@@ -1,0 +1,1167 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="StageSync 團隊企劃與人力調遣系統">
+  <h1 class="app-title">🎭 StageSync 團隊企劃與人力調遣系統</h1>
+
+  <!-- 登入與首次註冊區塊 -->
+  <section id="auth-box" class="card">
+    <h3 style="margin-top: 0;">🔐 成員登入 / 首次註冊</h3>
+    <div class="grid-2" style="margin-bottom: 12px;">
+      <div>
+        <label class="field-label" for="in-username">姓名 (帳號)</label>
+        <input id="in-username" type="text" placeholder="請輸入您的姓名 (管理者: midnight)" />
+      </div>
+      <div>
+        <label class="field-label" for="in-password">密碼</label>
+        <input id="in-password" type="password" placeholder="請輸入密碼 (管理者: midnight1027)" />
+      </div>
+    </div>
+
+    <div style="margin-bottom: 12px;">
+      <label class="field-label">登入身分</label>
+      <div class="pill-group" id="login-mode-group">
+        <label class="pill-item">
+          <input type="radio" name="login-mode" value="一般登入" checked />
+          <span>一般登入</span>
+        </label>
+        <label class="pill-item">
+          <input type="radio" name="login-mode" value="管理者登入" />
+          <span>管理者登入</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="row">
+      <button id="btn-login" class="btn-primary col">🚀 登入系統</button>
+      <button id="btn-register" class="col">📝 首次註冊 (自動記憶帳密)</button>
+    </div>
+    <div id="auth-status" class="status-msg"></div>
+  </section>
+
+  <!-- 登入後主系統介面 -->
+  <section id="main-box" class="hidden">
+    <!-- 頂部狀態列 -->
+    <div class="card row" style="justify-content: space-between; padding: 12px 16px;">
+      <div id="header-info" style="font-size: 16px;">歡迎使用</div>
+      <button id="btn-logout" class="btn-sm">🚪 切換帳號</button>
+    </div>
+
+    <!-- 1. 當月代辦事項公告欄 -->
+    <details class="accordion" open>
+      <summary>📅 當月代辦事項公告欄</summary>
+      <div class="accordion-body">
+        <div class="row-stretch">
+          <div class="col-2">
+            <textarea
+              id="todo-box"
+              class="todo-textarea"
+              placeholder="請在此輸入當月代辦事項公告..."
+            ></textarea>
+          </div>
+          <div class="col" style="display: flex; flex-direction: column; justify-content: center; gap: 6px;">
+            <button id="btn-save-todo" class="btn-primary">💾 儲存並同步代辦事項</button>
+            <div id="todo-status" class="status-msg"></div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <!-- 2. 主導覽切換按鈕 -->
+    <div class="main-nav-row">
+      <button id="btn-nav-projects" class="main-nav-btn active">
+        📋 專案 / 企劃 / 比賽 / 商演 / 活動表演
+      </button>
+      <button id="btn-nav-manpower" class="main-nav-btn inactive">
+        👥 當週人力與調查表
+      </button>
+      <button id="btn-nav-account" class="main-nav-btn inactive">
+        ⚙️ 帳號與成員管理
+      </button>
+    </div>
+
+    <!-- 【主頁面一】專案 / 企劃 -->
+    <div id="section-projects">
+      <!-- 視圖 A：專案列表總覽頁 -->
+      <div id="proj-list-view" class="card">
+        <div class="row" style="justify-content: space-between; margin-bottom: 12px;">
+          <div>
+            <label class="field-label">分類篩選</label>
+            <div class="pill-group" id="cat-filter-group">
+              {['全部', '專案', '企劃', '比賽', '商演', '活動表演'].map((cat, idx) => (
+                <label class="pill-item">
+                  <input type="radio" name="cat-filter" value={cat} checked={idx === 0} />
+                  <span>{cat}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <button id="btn-go-new-proj" class="btn-primary">➕ 新增專案</button>
+        </div>
+
+        <div class="table-wrap" style="margin-bottom: 12px;">
+          <table>
+            <thead>
+              <tr>
+                <th>編號</th>
+                <th>分類</th>
+                <th>名稱</th>
+                <th>總負責人</th>
+                <th>子負責人</th>
+                <th>使用歌曲</th>
+                <th>參與人員</th>
+                <th>預計拍攝日</th>
+                <th>棒子顏色數量</th>
+              </tr>
+            </thead>
+            <tbody id="project-table-body"></tbody>
+          </table>
+        </div>
+
+        <div class="row" style="margin-bottom: 8px;">
+          <div class="col-2">
+            <label class="field-label" for="proj-selector">選擇要檢視段落或編輯的項目</label>
+            <select id="proj-selector"></select>
+          </div>
+          <div class="col-auto" style="display: flex; gap: 8px; align-self: flex-end; flex-wrap: wrap;">
+            <button id="btn-load-edit">✏️ 編輯選中項</button>
+            <button id="btn-pin">📌 釘選/取消</button>
+            <button id="btn-del" class="btn-danger">🗑️ 刪除</button>
+          </div>
+        </div>
+        <div id="proj-list-status" class="status-msg"></div>
+
+        <!-- 段落出席狀態檢視 -->
+        <details class="accordion" open style="margin-top: 12px; margin-bottom: 0;">
+          <summary>🎶 當週人力分布：各段落 (A melo / B melo / C melo / Last) 到齊狀態 (🟢全到 / ⚪未齊)</summary>
+          <div class="accordion-body">
+            <div class="row" style="justify-content: space-between; margin-bottom: 10px;">
+              <div>
+                <label class="field-label">比對週期 (台灣時間)</label>
+                <div class="pill-group">
+                  <label class="pill-item">
+                    <input type="radio" name="dist-week" value="下週調查表" checked />
+                    <span>下週調查表</span>
+                  </label>
+                  <label class="pill-item">
+                    <input type="radio" name="dist-week" value="當週人力" />
+                    <span>當週人力</span>
+                  </label>
+                </div>
+              </div>
+              <button id="btn-refresh-dist" class="btn-sm">🔄 立即更新狀態</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>日期 (星期)</th>
+                    <th>A melo</th>
+                    <th>B melo</th>
+                    <th>C melo</th>
+                    <th>Last</th>
+                  </tr>
+                </thead>
+                <tbody id="dist-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <!-- 視圖 B：新增 / 編輯專案頁面 -->
+      <div id="proj-form-view" class="card hidden">
+        <div class="row" style="justify-content: space-between; margin-bottom: 10px;">
+          <h3 id="form-page-title" style="margin: 0;">➕ 新增專案 / 企劃</h3>
+          <button id="btn-back-list">⬅️ 返回列表</button>
+        </div>
+        <p style="color: var(--text-muted); font-size: 14px; margin-top: 0;">
+          💡 <strong>填寫說明</strong>：新增項目請保持「目前編輯編號」為空白；所有人員欄位均直接從<strong>已註冊成員名單</strong>點選，送出後將完整列出。
+        </p>
+
+        <div class="grid-3" style="margin-bottom: 12px;">
+          <div>
+            <label class="field-label" for="edit-proj-id">目前編輯編號 (空白=新增)</label>
+            <input id="edit-proj-id" type="text" placeholder="新增時請留空" readonly />
+          </div>
+          <div>
+            <label class="field-label" for="p-cat">類別 (必填)</label>
+            <select id="p-cat">
+              <option value="專案">專案</option>
+              <option value="企劃" selected>企劃</option>
+              <option value="比賽">比賽</option>
+              <option value="商演">商演</option>
+              <option value="活動表演">活動表演</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" for="p-title">企劃/專案名稱 (必填)</label>
+            <input id="p-title" type="text" />
+          </div>
+        </div>
+
+        <div class="grid-3" style="margin-bottom: 12px;">
+          <div>
+            <label class="field-label" for="p-main">總負責人 (必填 / 選擇已註冊成員)</label>
+            <select id="p-main"></select>
+          </div>
+          <div>
+            <label class="field-label" for="p-sub">子負責人 (選填 / 選擇已註冊成員)</label>
+            <select id="p-sub"></select>
+          </div>
+          <div>
+            <label class="field-label" for="p-song">使用歌曲</label>
+            <input id="p-song" type="text" />
+          </div>
+        </div>
+
+        <div class="grid-3" style="margin-bottom: 14px;">
+          <div>
+            <label class="field-label">參與人員 (複選已註冊成員)</label>
+            <div id="p-members-group" class="pill-group"></div>
+          </div>
+          <div>
+            <label class="field-label" for="p-date">預計拍攝日期</label>
+            <input id="p-date" type="text" placeholder="例如: 2026-12-20" />
+          </div>
+          <div>
+            <label class="field-label" for="p-stick">使用棒子顏色數量</label>
+            <input id="p-stick" type="text" placeholder="例如: 大閃橘 x4" />
+          </div>
+        </div>
+
+        <h4 style="margin: 8px 0;">🎶 各段落專屬人員設定 (點選已註冊成員，系統將自動列出並聯動綠/灰到齊判定)</h4>
+        <div class="grid-4" style="margin-bottom: 14px;">
+          <div>
+            <label class="field-label">A melo 人員 (複選)</label>
+            <div id="p-a-group" class="pill-group"></div>
+          </div>
+          <div>
+            <label class="field-label">B melo 人員 (複選)</label>
+            <div id="p-b-group" class="pill-group"></div>
+          </div>
+          <div>
+            <label class="field-label">C melo 人員 (複選)</label>
+            <div id="p-c-group" class="pill-group"></div>
+          </div>
+          <div>
+            <label class="field-label">Last 人員 (複選)</label>
+            <div id="p-last-group" class="pill-group"></div>
+          </div>
+        </div>
+
+        <div class="row">
+          <button id="btn-draft-proj" class="col">💾 暫存填寫進度</button>
+          <button id="btn-submit-proj" class="btn-primary col">✅ 確認送出並發布</button>
+          <button id="btn-new-mode" class="col">🆕 清空表單</button>
+        </div>
+        <div id="proj-form-status" class="status-msg"></div>
+      </div>
+    </div>
+
+    <!-- 【主頁面二】當週人力與調查表 -->
+    <div id="section-manpower" class="hidden">
+      <div id="week-banner" class="banner-bar"></div>
+
+      <div class="card">
+        <div class="row" style="justify-content: space-between; margin-bottom: 14px;">
+          <div>
+            <label class="field-label">選擇週期 (切換自動載入您該週紀錄)</label>
+            <div class="pill-group">
+              <label class="pill-item">
+                <input type="radio" name="week-selector" value="下週調查表" checked />
+                <span>下週調查表</span>
+              </label>
+              <label class="pill-item">
+                <input type="radio" name="week-selector" value="當週人力" />
+                <span>當週人力</span>
+              </label>
+            </div>
+          </div>
+          <button id="btn-refresh-week" class="btn-sm">🔄 同步最新台灣時間與人力表</button>
+        </div>
+
+        <div class="grid-2">
+          <!-- 線上人力調查表 -->
+          <div>
+            <h3 style="margin-top: 0;">📝 線上人力調查表</h3>
+            <div class="row" style="margin-bottom: 10px;">
+              <button id="btn-load-my-avail" class="btn-sm">✏️ 載入我的紀錄修改</button>
+              <button id="btn-admin-load-avail" class="btn-sm admin-only hidden">🔍 管理者載入成員</button>
+            </div>
+
+            <div id="admin-override-wrap" class="admin-only hidden" style="margin-bottom: 10px;">
+              <label class="field-label" for="admin-override-user">
+                管理者專用：輸入欲修改成員姓名 (一般成員留空即可)
+              </label>
+              <input id="admin-override-user" type="text" placeholder="管理者登入時可輸入成員姓名" />
+            </div>
+
+            <div style="margin-bottom: 10px;">
+              <label class="field-label">可配合日期 (週一～週日複選)</label>
+              <div id="avail-days-group" class="pill-group"></div>
+            </div>
+
+            <div style="margin-bottom: 10px;">
+              <label class="pill-item">
+                <input id="avail-absent" type="checkbox" />
+                <span>🚫 本週不克出席 (勾選後忽略上方日期)</span>
+              </label>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <label class="field-label" for="avail-note">備註 (選填)</label>
+              <input id="avail-note" type="text" placeholder="例如：週三 19:00 後可到" />
+            </div>
+
+            <div class="row">
+              <button id="btn-draft-avail" class="col">💾 暫存調查進度</button>
+              <button id="btn-submit-avail" class="btn-primary col">📤 送出並更新人力表</button>
+            </div>
+            <div id="avail-status" class="status-msg"></div>
+          </div>
+
+          <!-- 公布人力總表 + 成員明細表 -->
+          <div>
+            <h3 style="margin-top: 0;">📊 人力表總覽 (按日期顯示可出席成員)</h3>
+            <div class="table-wrap" style="margin-bottom: 16px;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>日期 (星期)</th>
+                    <th>可出席成員與備註</th>
+                  </tr>
+                </thead>
+                <tbody id="avail-summary-body"></tbody>
+              </table>
+            </div>
+
+            <h3>👥 已填寫成員明細表</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>成員姓名</th>
+                    <th>可配合日期</th>
+                    <th>備註</th>
+                    <th>最後更新</th>
+                  </tr>
+                </thead>
+                <tbody id="member-records-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 【主頁面三】帳號設定與成員管理 -->
+    <div id="section-account" class="hidden">
+      <div class="card">
+        <h3 style="margin-top: 0;">🔑 更改我的密碼</h3>
+        <div class="grid-3" style="margin-bottom: 12px;">
+          <div>
+            <label class="field-label" for="pw-current">目前密碼</label>
+            <input id="pw-current" type="password" placeholder="請輸入目前密碼" />
+          </div>
+          <div>
+            <label class="field-label" for="pw-new">新密碼</label>
+            <input id="pw-new" type="password" placeholder="請輸入新密碼" />
+          </div>
+          <div>
+            <label class="field-label" for="pw-confirm">確認新密碼</label>
+            <input id="pw-confirm" type="password" placeholder="再次輸入新密碼" />
+          </div>
+        </div>
+        <button id="btn-change-pw" class="btn-primary">🔑 更新我的密碼</button>
+        <div id="pw-status" class="status-msg"></div>
+      </div>
+
+      <div id="admin-users-panel" class="card admin-only hidden">
+        <div class="row" style="justify-content: space-between; margin-bottom: 12px;">
+          <h3 style="margin: 0;">👑 成員與權限管理 (管理者專用)</h3>
+          <button id="btn-refresh-users" class="btn-sm">🔄 重新整理名單</button>
+        </div>
+
+        <div style="padding: 12px; border: 1px solid var(--border-block); border-radius: 10px; margin-bottom: 14px; background: rgba(255,255,255,0.02);">
+          <h4 style="margin: 0 0 10px 0;">➕ 新增使用者</h4>
+          <div class="grid-4" style="align-items: end;">
+            <div>
+              <label class="field-label" for="new-user-name">姓名 (帳號)</label>
+              <input id="new-user-name" type="text" placeholder="請輸入成員姓名" />
+            </div>
+            <div>
+              <label class="field-label" for="new-user-pw">初始密碼</label>
+              <input id="new-user-pw" type="password" placeholder="設定初始密碼" />
+            </div>
+            <div>
+              <label class="field-label" for="new-user-role">身分權限</label>
+              <select id="new-user-role">
+                <option value="user" selected>👤 一般成員 (user)</option>
+                <option value="admin">👑 管理者 (admin)</option>
+              </select>
+            </div>
+            <div>
+              <button id="btn-admin-add-user" class="btn-primary" style="width: 100%;">➕ 新增使用者</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>帳號名稱</th>
+                <th>身分權限</th>
+                <th>建立時間</th>
+                <th>重設密碼 (選填)</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="admin-users-body"></tbody>
+          </table>
+        </div>
+        <div id="admin-users-status" class="status-msg"></div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    interface Project {
+      id: string;
+      category: string;
+      title: string;
+      main_leader: string;
+      sub_leader: string;
+      song: string;
+      members: string[];
+      shoot_date: string;
+      stick_info: string;
+      a_melo: string[];
+      b_melo: string[];
+      c_melo: string[];
+      last: string[];
+      pinned: boolean;
+    }
+
+    interface User {
+      username: string;
+      role: 'admin' | 'user';
+    }
+
+    const state = {
+      user: null as User | null,
+      members: [] as string[],
+      projects: [] as Project[],
+      selectedProjectId: '',
+      catFilter: '全部',
+      distWeekType: '下週調查表',
+      weekType: '下週調查表',
+      syncTimer: null as number | null,
+    };
+
+    function $<T = HTMLElement>(id: string): T {
+      return document.getElementById(id) as unknown as T;
+    }
+
+    function showToast(msg: string, warn = false) {
+      const container = $('toast-container');
+      const el = document.createElement('div');
+      el.className = `toast${warn ? ' warn' : ''}`;
+      el.textContent = msg;
+      container.appendChild(el);
+      setTimeout(() => el.remove(), 3500);
+    }
+
+    async function api<T = Record<string, unknown>>(
+      url: string,
+      options: RequestInit = {}
+    ): Promise<T & { ok?: boolean; error?: string; message?: string }> {
+      const res = await fetch(url, {
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+        ...options,
+      });
+      const data = (await res.json()) as T & { ok?: boolean; error?: string; message?: string };
+      return data;
+    }
+
+    function escapeHtml(str: string): string {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function getCheckedValues(containerId: string): string[] {
+      const container = $(containerId);
+      return Array.from(container.querySelectorAll<HTMLInputElement>('input[type="checkbox"]:checked')).map(
+        (el) => el.value
+      );
+    }
+
+    function renderCheckboxPills(containerId: string, options: string[], selected: string[]) {
+      const container = $(containerId);
+      const selectedSet = new Set(selected);
+      container.innerHTML = options
+        .map(
+          (opt) => `
+          <label class="pill-item">
+            <input type="checkbox" value="${escapeHtml(opt)}" ${selectedSet.has(opt) ? 'checked' : ''} />
+            <span>${escapeHtml(opt)}</span>
+          </label>`
+        )
+        .join('');
+    }
+
+    function renderLeaderSelects(options: string[], mainVal?: string, subVal?: string) {
+      const mainSel = $<HTMLSelectElement>('p-main');
+      const subSel = $<HTMLSelectElement>('p-sub');
+      mainSel.innerHTML = options
+        .map((m) => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`)
+        .join('');
+      subSel.innerHTML = ['（無）', ...options]
+        .map((m) => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`)
+        .join('');
+
+      if (mainVal && options.includes(mainVal)) mainSel.value = mainVal;
+      subSel.value = subVal && options.includes(subVal) ? subVal : '（無）';
+    }
+
+    function renderWeekBanner(timeMeta: {
+      twFull: string;
+      thisWeekRange: string;
+      nextWeekRange: string;
+    }) {
+      $('week-banner').innerHTML =
+        `🕒 <strong>台灣時間</strong>：<code>${escapeHtml(timeMeta.twFull)}</code> ｜ ` +
+        `<strong>📆 本週</strong>：<code>${escapeHtml(timeMeta.thisWeekRange)}</code> ｜ ` +
+        `<strong>📆 下週調查</strong>：<code>${escapeHtml(timeMeta.nextWeekRange)}</code>`;
+    }
+
+    function renderProjectsTable(projects: Project[]) {
+      const tbody = $('project-table-body');
+      if (projects.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text-muted);">目前無符合條件的項目</td></tr>';
+      } else {
+        tbody.innerHTML = projects
+          .map((p) => {
+            const pinMark = p.pinned ? '📌 ' : '';
+            return `<tr>
+              <td>${escapeHtml(p.id)}</td>
+              <td>${pinMark}${escapeHtml(p.category)}</td>
+              <td>${escapeHtml(p.title)}</td>
+              <td>${escapeHtml(p.main_leader)}</td>
+              <td>${escapeHtml(p.sub_leader || '（無）')}</td>
+              <td>${escapeHtml(p.song)}</td>
+              <td>${escapeHtml(p.members.join(', '))}</td>
+              <td>${escapeHtml(p.shoot_date)}</td>
+              <td>${escapeHtml(p.stick_info)}</td>
+            </tr>`;
+          })
+          .join('');
+      }
+
+      const sel = $<HTMLSelectElement>('proj-selector');
+      const prev = state.selectedProjectId;
+      sel.innerHTML = projects
+        .map(
+          (p) =>
+            `<option value="${escapeHtml(p.id)}">${escapeHtml(p.id)} - ${escapeHtml(p.title)} (${escapeHtml(p.category)})</option>`
+        )
+        .join('');
+
+      if (prev && projects.some((p) => p.id === prev)) {
+        sel.value = prev;
+      } else if (projects[0]) {
+        state.selectedProjectId = projects[0].id;
+        sel.value = projects[0].id;
+      } else {
+        state.selectedProjectId = '';
+      }
+    }
+
+    function renderDistribution(
+      rows: Array<{ date: string; a_melo: string; b_melo: string; c_melo: string; last: string }>
+    ) {
+      const tbody = $('dist-table-body');
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">請先選擇項目</td></tr>';
+        return;
+      }
+      tbody.innerHTML = rows
+        .map(
+          (r) => `<tr>
+            <td>${escapeHtml(r.date)}</td>
+            <td>${escapeHtml(r.a_melo)}</td>
+            <td>${escapeHtml(r.b_melo)}</td>
+            <td>${escapeHtml(r.c_melo)}</td>
+            <td>${escapeHtml(r.last)}</td>
+          </tr>`
+        )
+        .join('');
+    }
+
+    function renderAvailabilityTables(avail: {
+      byDate: Array<{ date: string; attendeesText: string }>;
+      records: Array<{
+        username: string;
+        days: string[];
+        absent: boolean;
+        note: string;
+        updated_at: string;
+      }>;
+    }) {
+      $('avail-summary-body').innerHTML = avail.byDate
+        .map(
+          (row) => `<tr>
+            <td>${escapeHtml(row.date)}</td>
+            <td class="wrap-cell">${escapeHtml(row.attendeesText)}</td>
+          </tr>`
+        )
+        .join('');
+
+      if (!avail.records.length) {
+        $('member-records-body').innerHTML =
+          '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);">尚無成員填寫</td></tr>';
+        return;
+      }
+
+      $('member-records-body').innerHTML = avail.records
+        .map((rec) => {
+          const status = rec.absent
+            ? '🚫 本週不克出席'
+            : rec.days.length
+              ? rec.days.map((d) => d.slice(5)).join('、')
+              : '（未勾選日期）';
+          return `<tr>
+            <td>${escapeHtml(rec.username)}</td>
+            <td>${escapeHtml(status)}</td>
+            <td>${escapeHtml(rec.note)}</td>
+            <td>${escapeHtml(rec.updated_at)}</td>
+          </tr>`;
+        })
+        .join('');
+    }
+
+    function applyProjectForm(
+      opts: string[],
+      data: Partial<Project> & { edit_id?: string } = {},
+      titleText = '➕ 新增專案 / 企劃'
+    ) {
+      $('form-page-title').textContent = titleText;
+      $<HTMLInputElement>('edit-proj-id').value = data.edit_id ?? data.id ?? '';
+      $<HTMLSelectElement>('p-cat').value = data.category || '企劃';
+      $<HTMLInputElement>('p-title').value = data.title || '';
+      $<HTMLInputElement>('p-song').value = data.song || '';
+      $<HTMLInputElement>('p-date').value = data.shoot_date || '';
+      $<HTMLInputElement>('p-stick').value = data.stick_info || '';
+
+      const defaultMain =
+        data.main_leader && opts.includes(data.main_leader)
+          ? data.main_leader
+          : state.user?.username && opts.includes(state.user.username)
+            ? state.user.username
+            : opts[0];
+
+      renderLeaderSelects(opts, defaultMain, data.sub_leader || '（無）');
+      renderCheckboxPills('p-members-group', opts, data.members || []);
+      renderCheckboxPills('p-a-group', opts, data.a_melo || []);
+      renderCheckboxPills('p-b-group', opts, data.b_melo || []);
+      renderCheckboxPills('p-c-group', opts, data.c_melo || []);
+      renderCheckboxPills('p-last-group', opts, data.last || []);
+    }
+
+    function switchMainSection(target: 'projects' | 'manpower' | 'account') {
+      const isProj = target === 'projects';
+      const isMan = target === 'manpower';
+      const isAcc = target === 'account';
+      $('section-projects').classList.toggle('hidden', !isProj);
+      $('section-manpower').classList.toggle('hidden', !isMan);
+      $('section-account').classList.toggle('hidden', !isAcc);
+      $('btn-nav-projects').className = `main-nav-btn ${isProj ? 'active' : 'inactive'}`;
+      $('btn-nav-manpower').className = `main-nav-btn ${isMan ? 'active' : 'inactive'}`;
+      $('btn-nav-account').className = `main-nav-btn ${isAcc ? 'active' : 'inactive'}`;
+      if (isAcc && state.user?.role === 'admin') {
+        loadAdminUsers();
+      }
+    }
+
+    async function loadBootstrap(initial = false) {
+      const params = new URLSearchParams({
+        category: state.catFilter,
+        weekType: state.weekType,
+        distWeekType: state.distWeekType,
+        projectId: state.selectedProjectId,
+      });
+      const res = await api<any>(`/api/bootstrap?${params.toString()}`);
+      if (!res.ok) {
+        $('auth-box').classList.remove('hidden');
+        $('main-box').classList.add('hidden');
+        return false;
+      }
+
+      state.user = res.user;
+      state.members = res.members;
+      state.projects = res.projects;
+      state.selectedProjectId = res.selectedProjectId || '';
+
+      $('auth-box').classList.add('hidden');
+      $('main-box').classList.remove('hidden');
+
+      const roleBadge = res.user.role === 'admin' ? '👑 管理者' : '👤 成員';
+      $('header-info').innerHTML =
+        `<strong>${escapeHtml(res.user.username)}</strong> (${roleBadge}) ｜ 🕒 <code>${escapeHtml(res.time.twShort)}</code>`;
+
+      document.querySelectorAll('.admin-only').forEach((el) => {
+        el.classList.toggle('hidden', res.user.role !== 'admin');
+      });
+
+      const activeEl = document.activeElement;
+      if (initial || activeEl !== $('todo-box')) {
+        $<HTMLTextAreaElement>('todo-box').value = res.todos || '';
+      }
+
+      renderWeekBanner(res.time);
+      renderProjectsTable(res.projects);
+      renderDistribution(res.distribution || []);
+      renderAvailabilityTables(res.availability);
+
+      if (initial) {
+        renderCheckboxPills('avail-days-group', res.availability.weekDates, res.myAvailForm.days);
+        $<HTMLInputElement>('avail-absent').checked = res.myAvailForm.absent;
+        $<HTMLInputElement>('avail-note').value = res.myAvailForm.note;
+        $('avail-status').textContent = res.myAvailForm.hasSubmitted
+          ? `📝 已載入【${res.user.username}】的下週調查紀錄，可直接修改。`
+          : '';
+
+        if (res.projectDraft) {
+          applyProjectForm(res.members, res.projectDraft, '➕ 新增專案 / 企劃');
+        } else {
+          applyProjectForm(res.members, {}, '➕ 新增專案 / 企劃');
+        }
+      }
+
+      return true;
+    }
+
+    function startSyncTimer() {
+      if (state.syncTimer) clearInterval(state.syncTimer);
+      state.syncTimer = window.setInterval(() => {
+        if (state.user) {
+          loadBootstrap(false).catch(() => {});
+        }
+      }, 10000);
+    }
+
+    async function handleAuth(action: 'login' | 'register') {
+      const username = $<HTMLInputElement>('in-username').value.trim();
+      const password = $<HTMLInputElement>('in-password').value.trim();
+      const loginType =
+        document.querySelector<HTMLInputElement>('input[name="login-mode"]:checked')?.value || '一般登入';
+
+      const endpoint = action === 'login' ? '/api/auth/login' : '/api/auth/register';
+      const res = await api(endpoint, {
+        method: 'POST',
+        body: JSON.stringify({ username, password, loginType }),
+      });
+
+      if (!res.ok) {
+        const err = res.error || '密碼或名稱錯誤';
+        $('auth-status').textContent = err;
+        showToast(err, true);
+        return;
+      }
+
+      $('auth-status').textContent = res.message || '';
+      showToast(res.message || '登入成功');
+      await loadBootstrap(true);
+      switchMainSection('projects');
+      $('proj-list-view').classList.remove('hidden');
+      $('proj-form-view').classList.add('hidden');
+      startSyncTimer();
+    }
+
+    // Event Bindings
+    $('btn-login').addEventListener('click', () => handleAuth('login'));
+    $('btn-register').addEventListener('click', () => handleAuth('register'));
+
+    $('btn-logout').addEventListener('click', async () => {
+      await api('/api/auth/logout', { method: 'POST' });
+      state.user = null;
+      if (state.syncTimer) clearInterval(state.syncTimer);
+      $('auth-box').classList.remove('hidden');
+      $('main-box').classList.add('hidden');
+      $('auth-status').textContent = '';
+    });
+
+    $('btn-save-todo').addEventListener('click', async () => {
+      const todos = $<HTMLTextAreaElement>('todo-box').value;
+      const res = await api('/api/todos', { method: 'PUT', body: JSON.stringify({ todos }) });
+      $('todo-status').textContent = res.message || res.error || '';
+    });
+
+    $('btn-nav-projects').addEventListener('click', () => switchMainSection('projects'));
+    $('btn-nav-manpower').addEventListener('click', () => switchMainSection('manpower'));
+    $('btn-nav-account').addEventListener('click', () => switchMainSection('account'));
+
+    // Self password change & Admin user management
+    $('btn-change-pw').addEventListener('click', async () => {
+      const currentPassword = $<HTMLInputElement>('pw-current').value.trim();
+      const newPassword = $<HTMLInputElement>('pw-new').value.trim();
+      const confirmPassword = $<HTMLInputElement>('pw-confirm').value.trim();
+
+      if (!currentPassword || !newPassword) {
+        $('pw-status').textContent = '⚠️ 請填寫目前密碼與新密碼！';
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        $('pw-status').textContent = '⚠️ 兩次輸入的新密碼不一致！';
+        return;
+      }
+
+      const res = await api('/api/auth/change-password', {
+        method: 'POST',
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      $('pw-status').textContent = res.message || res.error || '';
+      if (res.ok) {
+        $<HTMLInputElement>('pw-current').value = '';
+        $<HTMLInputElement>('pw-new').value = '';
+        $<HTMLInputElement>('pw-confirm').value = '';
+        showToast(res.message || '密碼已更新');
+      }
+    });
+
+    async function loadAdminUsers() {
+      if (state.user?.role !== 'admin') return;
+      const res = await api<{
+        users: Array<{ username: string; role: 'admin' | 'user'; created_at: string }>;
+      }>('/api/admin/users');
+      if (!res.ok) return;
+
+      const tbody = $('admin-users-body');
+      tbody.innerHTML = res.users
+        .map((u) => {
+          const isSelf = u.username === state.user?.username;
+          return `<tr data-username="${escapeHtml(u.username)}">
+            <td><strong>${escapeHtml(u.username)}</strong>${isSelf ? ' (目前登入)' : ''}</td>
+            <td>
+              <select class="user-role-sel" ${isSelf ? 'disabled' : ''} style="min-width: 140px;">
+                <option value="user" ${u.role === 'user' ? 'selected' : ''}>👤 一般成員</option>
+                <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>👑 管理者</option>
+              </select>
+            </td>
+            <td>${escapeHtml((u.created_at || '').slice(0, 10))}</td>
+            <td>
+              <input type="password" class="user-reset-pw" placeholder="留空則不修改" style="min-width: 140px;" />
+            </td>
+            <td>
+              <div class="row" style="gap: 6px; flex-wrap: nowrap;">
+                <button class="btn-sm btn-primary btn-save-user">💾 儲存</button>
+                <button class="btn-sm btn-danger btn-del-user" ${isSelf ? 'disabled' : ''}>🗑️ 刪除</button>
+              </div>
+            </td>
+          </tr>`;
+        })
+        .join('');
+
+      tbody.querySelectorAll('.btn-save-user').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const tr = btn.closest('tr') as HTMLTableRowElement;
+          const uname = tr.dataset.username || '';
+          const role = (tr.querySelector('.user-role-sel') as unknown as HTMLSelectElement).value;
+          const pwInput = tr.querySelector('.user-reset-pw') as unknown as HTMLInputElement;
+          const newPassword = pwInput.value.trim();
+
+          const resUpdate = await api(`/api/admin/users/${encodeURIComponent(uname)}`, {
+            method: 'PUT',
+            body: JSON.stringify({ role, newPassword }),
+          });
+          $('admin-users-status').textContent = resUpdate.message || resUpdate.error || '';
+          if (resUpdate.ok) {
+            pwInput.value = '';
+            showToast(resUpdate.message || '已更新');
+            await loadBootstrap(false);
+          }
+        });
+      });
+
+      tbody.querySelectorAll('.btn-del-user').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const tr = btn.closest('tr') as HTMLTableRowElement;
+          const uname = tr.dataset.username || '';
+          const resDel = await api(`/api/admin/users/${encodeURIComponent(uname)}`, {
+            method: 'DELETE',
+          });
+          $('admin-users-status').textContent = resDel.message || resDel.error || '';
+          if (resDel.ok) {
+            showToast(resDel.message || '已刪除');
+            await loadAdminUsers();
+            await loadBootstrap(false);
+          }
+        });
+      });
+    }
+
+    $('btn-refresh-users').addEventListener('click', loadAdminUsers);
+
+    $('btn-admin-add-user').addEventListener('click', async () => {
+      const username = $<HTMLInputElement>('new-user-name').value.trim();
+      const password = $<HTMLInputElement>('new-user-pw').value.trim();
+      const role = $<HTMLSelectElement>('new-user-role').value;
+
+      const res = await api('/api/admin/users', {
+        method: 'POST',
+        body: JSON.stringify({ username, password, role }),
+      });
+      $('admin-users-status').textContent = res.message || res.error || '';
+      if (res.ok) {
+        $<HTMLInputElement>('new-user-name').value = '';
+        $<HTMLInputElement>('new-user-pw').value = '';
+        $<HTMLSelectElement>('new-user-role').value = 'user';
+        showToast(res.message || '已新增使用者');
+        await loadAdminUsers();
+        await loadBootstrap(false);
+      }
+    });
+
+    document.querySelectorAll<HTMLInputElement>('input[name="cat-filter"]').forEach((el) => {
+      el.addEventListener('change', async () => {
+        state.catFilter = el.value;
+        const res = await api<{ projects: Project[] }>(
+          `/api/projects?category=${encodeURIComponent(state.catFilter)}`
+        );
+        if (res.ok) {
+          state.projects = res.projects;
+          renderProjectsTable(res.projects);
+        }
+      });
+    });
+
+    async function refreshDistribution() {
+      if (!state.selectedProjectId) {
+        renderDistribution([]);
+        return;
+      }
+      const res = await api<{ distribution: any[] }>(
+        `/api/projects/${encodeURIComponent(state.selectedProjectId)}/distribution?weekType=${encodeURIComponent(state.distWeekType)}`
+      );
+      if (res.ok) renderDistribution(res.distribution);
+    }
+
+    $('proj-selector').addEventListener('change', (e) => {
+      state.selectedProjectId = (e.target as HTMLSelectElement).value;
+      refreshDistribution();
+    });
+
+    document.querySelectorAll<HTMLInputElement>('input[name="dist-week"]').forEach((el) => {
+      el.addEventListener('change', () => {
+        state.distWeekType = el.value;
+        refreshDistribution();
+      });
+    });
+
+    $('btn-refresh-dist').addEventListener('click', refreshDistribution);
+
+    $('btn-go-new-proj').addEventListener('click', async () => {
+      await loadBootstrap(false);
+      $('proj-list-view').classList.add('hidden');
+      $('proj-form-view').classList.remove('hidden');
+      $('proj-form-status').textContent = '';
+    });
+
+    $('btn-back-list').addEventListener('click', () => {
+      $('proj-list-view').classList.remove('hidden');
+      $('proj-form-view').classList.add('hidden');
+      $('proj-form-status').textContent = '';
+    });
+
+    $('btn-new-mode').addEventListener('click', () => {
+      applyProjectForm(state.members, {}, '➕ 新增專案 / 企劃');
+      $('proj-form-status').textContent = '🆕 已清空表單，請從已註冊成員名單選擇人員。';
+    });
+
+    $('btn-load-edit').addEventListener('click', () => {
+      const proj = state.projects.find((p) => p.id === state.selectedProjectId);
+      if (!proj) {
+        showToast('請先選擇一個項目！', true);
+        return;
+      }
+      const extraOpts = Array.from(
+        new Set([...state.members, proj.main_leader, ...proj.members].filter(Boolean))
+      );
+      applyProjectForm(extraOpts, proj, `✏️ 編輯專案：${proj.title} (${proj.id})`);
+      $('proj-list-view').classList.add('hidden');
+      $('proj-form-view').classList.remove('hidden');
+      $('proj-form-status').textContent = `✏️ 已載入「${proj.title}」，修改完成後請點擊「✅ 確認送出並發布」。`;
+    });
+
+    $('btn-pin').addEventListener('click', async () => {
+      if (!state.selectedProjectId) return;
+      const res = await api(`/api/projects/${encodeURIComponent(state.selectedProjectId)}/pin`, {
+        method: 'POST',
+      });
+      $('proj-list-status').textContent = res.message || res.error || '';
+      await loadBootstrap(false);
+    });
+
+    $('btn-del').addEventListener('click', async () => {
+      if (!state.selectedProjectId) return;
+      const res = await api(`/api/projects/${encodeURIComponent(state.selectedProjectId)}`, {
+        method: 'DELETE',
+      });
+      $('proj-list-status').textContent = res.message || res.error || '';
+      state.selectedProjectId = '';
+      await loadBootstrap(false);
+    });
+
+    function collectProjectPayload() {
+      return {
+        edit_id: $<HTMLInputElement>('edit-proj-id').value.trim(),
+        category: $<HTMLSelectElement>('p-cat').value,
+        title: $<HTMLInputElement>('p-title').value.trim(),
+        main_leader: $<HTMLSelectElement>('p-main').value,
+        sub_leader: $<HTMLSelectElement>('p-sub').value,
+        song: $<HTMLInputElement>('p-song').value.trim(),
+        members: getCheckedValues('p-members-group'),
+        shoot_date: $<HTMLInputElement>('p-date').value.trim(),
+        stick_info: $<HTMLInputElement>('p-stick').value.trim(),
+        a_melo: getCheckedValues('p-a-group'),
+        b_melo: getCheckedValues('p-b-group'),
+        c_melo: getCheckedValues('p-c-group'),
+        last: getCheckedValues('p-last-group'),
+      };
+    }
+
+    $('btn-draft-proj').addEventListener('click', async () => {
+      const res = await api('/api/drafts/project_draft', {
+        method: 'PUT',
+        body: JSON.stringify(collectProjectPayload()),
+      });
+      $('proj-form-status').textContent = res.message || res.error || '';
+    });
+
+    $('btn-submit-proj').addEventListener('click', async () => {
+      const payload = collectProjectPayload();
+      const isEdit = Boolean(payload.edit_id);
+      const url = isEdit
+        ? `/api/projects/${encodeURIComponent(payload.edit_id)}`
+        : '/api/projects';
+
+      const res = await api<{ id?: string }>(url, {
+        method: isEdit ? 'PUT' : 'POST',
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        $('proj-form-status').textContent = res.error || '送出失敗';
+        showToast(res.error || '送出失敗', true);
+        return;
+      }
+
+      showToast(res.message || '已發布');
+      $('proj-list-status').textContent = res.message || '';
+      state.catFilter = '全部';
+      document.querySelectorAll<HTMLInputElement>('input[name="cat-filter"]').forEach((el) => {
+        el.checked = el.value === '全部';
+      });
+      if (res.id) state.selectedProjectId = res.id;
+      $('proj-list-view').classList.remove('hidden');
+      $('proj-form-view').classList.add('hidden');
+      applyProjectForm(state.members, {}, '➕ 新增專案 / 企劃');
+      await loadBootstrap(false);
+    });
+
+    // Manpower & Availability handlers
+    async function loadAvailabilityView(loadMyRecord = true) {
+      const res = await api<any>(
+        `/api/availability?weekType=${encodeURIComponent(state.weekType)}`
+      );
+      if (!res.ok) return;
+      renderWeekBanner(res.time);
+      renderAvailabilityTables(res);
+
+      if (loadMyRecord) {
+        const uRes = await api<any>(
+          `/api/availability/user?weekType=${encodeURIComponent(state.weekType)}`
+        );
+        if (uRes.ok) {
+          renderCheckboxPills('avail-days-group', uRes.weekDates, uRes.days);
+          $<HTMLInputElement>('avail-absent').checked = uRes.absent;
+          $<HTMLInputElement>('avail-note').value = uRes.note;
+          $('avail-status').textContent = uRes.hasSubmitted
+            ? `📝 已載入【${uRes.targetUser}】在「${state.weekType}」的紀錄，可直接修改。`
+            : '';
+        }
+      }
+    }
+
+    document.querySelectorAll<HTMLInputElement>('input[name="week-selector"]').forEach((el) => {
+      el.addEventListener('change', () => {
+        state.weekType = el.value;
+        loadAvailabilityView(true);
+      });
+    });
+
+    $('btn-refresh-week').addEventListener('click', () => loadAvailabilityView(true));
+
+    async function loadTargetAvail(targetUser: string) {
+      const res = await api<any>(
+        `/api/availability/user?weekType=${encodeURIComponent(state.weekType)}&targetUser=${encodeURIComponent(targetUser)}`
+      );
+      if (!res.ok) {
+        $('avail-status').textContent = res.error || '讀取失敗';
+        return;
+      }
+      renderCheckboxPills('avail-days-group', res.weekDates, res.days);
+      $<HTMLInputElement>('avail-absent').checked = res.absent;
+      $<HTMLInputElement>('avail-note').value = res.note;
+      $('avail-status').textContent = res.message || '';
+    }
+
+    $('btn-load-my-avail').addEventListener('click', () => loadTargetAvail(''));
+    $('btn-admin-load-avail').addEventListener('click', () => {
+      const target = $<HTMLInputElement>('admin-override-user').value.trim();
+      loadTargetAvail(target);
+    });
+
+    $('btn-draft-avail').addEventListener('click', async () => {
+      const res = await api('/api/drafts/avail_draft', {
+        method: 'PUT',
+        body: JSON.stringify({
+          days: getCheckedValues('avail-days-group'),
+          absent: $<HTMLInputElement>('avail-absent').checked,
+          note: $<HTMLInputElement>('avail-note').value.trim(),
+        }),
+      });
+      $('avail-status').textContent = res.message || res.error || '';
+    });
+
+    $('btn-submit-avail').addEventListener('click', async () => {
+      const targetUser = $<HTMLInputElement>('admin-override-user').value.trim();
+      const res = await api('/api/availability', {
+        method: 'PUT',
+        body: JSON.stringify({
+          weekType: state.weekType,
+          targetUser,
+          days: getCheckedValues('avail-days-group'),
+          absent: $<HTMLInputElement>('avail-absent').checked,
+          note: $<HTMLInputElement>('avail-note').value.trim(),
+        }),
+      });
+      $('avail-status').textContent = res.message || res.error || '';
+      if (res.ok) {
+        await loadAvailabilityView(false);
+        await refreshDistribution();
+      }
+    });
+
+    // Initial session check on page load
+    loadBootstrap(true).then((loggedIn) => {
+      if (loggedIn) startSyncTimer();
+    });
+  </script>
+</Layout>

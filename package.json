@@ -1,0 +1,25 @@
+{
+  "name": "stagesync-workers",
+  "type": "module",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "wrangler d1 migrations apply stagesync-db --local && astro build",
+    "build:app": "astro build",
+    "preview": "wrangler dev",
+    "deploy": "wrangler d1 migrations apply stagesync-db --remote && astro build && wrangler deploy",
+    "db:migrate:local": "wrangler d1 migrations apply stagesync-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply stagesync-db --remote",
+    "typecheck": "astro check && tsc --noEmit"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^12.6.12",
+    "astro": "^5.16.6",
+    "hono": "^4.12.8"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.6",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.76.0"
+  }
+}

@@ -1,0 +1,25 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+}
+
+const { title = 'StageSync 團隊企劃與人力調遣系統' } = Astro.props;
+---
+
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="google" content="notranslate" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <div id="toast-container"></div>
+    <main class="app-container">
+      <slot />
+    </main>
+  </body>
+</html>
