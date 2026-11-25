@@ -57,9 +57,7 @@ CREATE INDEX IF NOT EXISTS idx_availability_week ON availability (week_key);
 -- Seed default users
 INSERT OR IGNORE INTO users (username, password_hash, role, created_at) VALUES
   ('midnight', 'midnight1027', 'admin', '2026-01-01T00:00:00+08:00'),
-  ('空羽', '1234', 'user', '2026-01-01T00:00:00+08:00'),
-  ('希姆', '1234', 'user', '2026-01-01T00:00:00+08:00'),
-  ('方良', '1234', 'user', '2026-01-01T00:00:00+08:00');
+  ('空羽', '1234', 'user', '2026-01-01T00:00:00+08:00');
 
 -- Seed default monthly todos
 INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES (
